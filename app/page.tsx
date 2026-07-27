@@ -1,65 +1,71 @@
-import Image from "next/image";
+"use client";
+
+import {
+  DndContext,
+  DragOverlay,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { useState } from "react";
+import { useBoard } from "./lib/useBoard";
+import { COLUMNS, type ColumnId } from "./lib/types";
+import Column from "./components/Column";
+import TaskCard from "./components/TaskCard";
 
 export default function Home() {
+  const { tasks, addTask, removeTask, moveTask, loaded } = useBoard();
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  if (!loaded) return null;
+
+  const activeTask = tasks.find((t) => t.id === activeId);
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(event.active.id as string);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (over && over.id !== active.data.current?.columnId) {
+      moveTask(active.id as string, over.id as ColumnId);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <main className="relative z-10 mx-auto max-w-4xl px-6 py-16">
+      <div className="mb-2 flex items-center gap-3 font-[family-name:var(--font-display)] text-xs uppercase tracking-[0.2em] text-[#8B2E2E]">
+        <span>✦</span>
+        <span>Quadro de recompensas</span>
+      </div>
+      <h1 className="font-[family-name:var(--font-display)] text-4xl text-[#E9DFC4]">
+        Foco
+      </h1>
+      <p className="mt-2 font-[family-name:var(--font-body)] italic text-[#A9987A]">
+        Organize suas tarefas arrastando entre os quadros.
+      </p>
+
+      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:gap-4">
+          {COLUMNS.map((col) => (
+            <Column
+              key={col.id}
+              id={col.id}
+              label={col.label}
+              tasks={tasks.filter((t) => t.columnId === col.id)}
+              onRemove={removeTask}
+              onAdd={addTask}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
-    </div>
+
+        <DragOverlay>
+          {activeTask ? (
+            <TaskCard task={activeTask} onRemove={() => {}} />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </main>
   );
 }
