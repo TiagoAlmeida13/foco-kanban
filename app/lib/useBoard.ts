@@ -9,17 +9,18 @@ export function useBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        setTasks(JSON.parse(raw));
-      } catch {
-        setTasks([]);
-      }
+ // eslint-disable-next-line react-hooks/set-state-in-effect -- carregamento único do localStorage, necessário para evitar erro de hidratação
+useEffect(() => {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try {
+      setTasks(JSON.parse(raw));
+    } catch {
+      setTasks([]);
     }
-    setLoaded(true);
-  }, []);
+  }
+  setLoaded(true);
+}, []);
 
   useEffect(() => {
     if (loaded) {
